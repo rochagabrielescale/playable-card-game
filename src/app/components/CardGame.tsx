@@ -304,10 +304,10 @@ function HPBar({ hp, maxHp, label, variant = "gold" }: { hp: number; maxHp: numb
 
 // ─── Draggable Card View ──────────────────────────────────────────────────────
 function DraggableCardView({
-  card, onDragPlay, disabled, dropZoneRef,
+  card, onDragPlay, disabled, dropZoneRef, isMobile,
 }: {
   card: CardInstance; onDragPlay: (card: CardInstance) => void; disabled: boolean;
-  dropZoneRef: React.RefObject<HTMLDivElement | null>;
+  dropZoneRef: React.RefObject<HTMLDivElement | null>; isMobile: boolean;
 }) {
   const { def } = card;
   const x = useMotionValue(0);
@@ -315,6 +315,9 @@ function DraggableCardView({
   const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12]);
   const scale = useTransform(y, [0, -80, -200], [1, 1.08, 1.15]);
   const [dragging, setDragging] = useState(false);
+
+  const cardWidth = isMobile ? 80 : 118;
+  const cardHeight = isMobile ? 114 : 168;
 
   function handleDragEnd(_: any, info: { point: { x: number; y: number }; velocity: { x: number; y: number } }) {
     setDragging(false);
@@ -333,15 +336,25 @@ function DraggableCardView({
     }
   }
 
+  function handleTap() {
+    if (disabled || isMobile) return;
+  }
+
+  function handleMobileClick() {
+    if (disabled || !isMobile) return;
+    onDragPlay(card);
+  }
+
   return (
     <motion.div
-      drag={!disabled}
+      drag={!disabled && !isMobile}
       dragSnapToOrigin
       dragElastic={0.18}
       dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
       onDragStart={() => setDragging(true)}
       onDragEnd={handleDragEnd}
-      style={{ x, y, rotate, scale, cursor: disabled ? "default" : "grab", width: 118, height: 168, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
+      onClick={handleMobileClick}
+      style={{ x, y, rotate, scale, cursor: disabled ? "default" : (isMobile ? "pointer" : "grab"), width: cardWidth, height: cardHeight, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
       whileHover={!disabled ? { y: -14, scale: 1.06 } : {}}
       transition={{ type: "spring", stiffness: 300, damping: 22 }}
     >
@@ -374,12 +387,15 @@ function DraggableCardView({
   );
 }
 
-function DeckStack({ count, onDraw, canDraw }: { count: number; onDraw: () => void; canDraw: boolean }) {
+function DeckStack({ count, onDraw, canDraw, isMobile }: { count: number; onDraw: () => void; canDraw: boolean; isMobile: boolean }) {
+  const deckWidth = isMobile ? 68 : 96;
+  const deckHeight = isMobile ? 96 : 136;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-      <motion.div whileHover={canDraw ? { scale: 1.06, y: -4 } : {}} whileTap={canDraw ? { scale: 0.97 } : {}} onClick={canDraw ? onDraw : undefined} style={{ cursor: canDraw ? "pointer" : "default", position: "relative", width: 96, height: 136 }}>
-        {count > 2 && <img src={cardBack} alt="" draggable={false} style={{ position: "absolute", top: -7, left: -5, width: "100%", height: "100%", objectFit: "cover", opacity: 0.45, filter: "brightness(0.5)" }} />}
-        {count > 1 && <img src={cardBack} alt="" draggable={false} style={{ position: "absolute", top: -3.5, left: -2.5, width: "100%", height: "100%", objectFit: "cover", opacity: 0.65, filter: "brightness(0.65)" }} />}
+      <motion.div whileHover={canDraw ? { scale: 1.06, y: -4 } : {}} whileTap={canDraw ? { scale: 0.97 } : {}} onClick={canDraw ? onDraw : undefined} style={{ cursor: canDraw ? "pointer" : "default", position: "relative", width: deckWidth, height: deckHeight }}>
+        {count > 2 && <img src={cardBack} alt="" draggable={false} style={{ position: "absolute", top: isMobile ? -5 : -7, left: isMobile ? -3 : -5, width: "100%", height: "100%", objectFit: "cover", opacity: 0.45, filter: "brightness(0.5)" }} />}
+        {count > 1 && <img src={cardBack} alt="" draggable={false} style={{ position: "absolute", top: isMobile ? -2.5 : -3.5, left: isMobile ? -1.5 : -2.5, width: "100%", height: "100%", objectFit: "cover", opacity: 0.65, filter: "brightness(0.65)" }} />}
         <img src={cardBack} alt="Draw" draggable={false} style={{ position: "relative", width: "100%", height: "100%", objectFit: "cover", border: canDraw ? `1.5px solid ${T.gold}` : `1.5px solid #2a2a2a`, boxShadow: canDraw ? `0 0 16px ${T.goldGlow}, 0 8px 24px rgba(0,0,0,0.7)` : "0 4px 12px rgba(0,0,0,0.6)", filter: canDraw ? "none" : "brightness(0.5) grayscale(0.4)", transition: "all 0.3s" }} />
         {canDraw && <motion.div animate={{ scale: [1,1.14,1], opacity: [0.7,0,0.7] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }} style={{ position: "absolute", inset: -5, border: `1.5px solid ${T.gold}`, pointerEvents: "none" }} />}
       </motion.div>
@@ -391,12 +407,16 @@ function DeckStack({ count, onDraw, canDraw }: { count: number; onDraw: () => vo
   );
 }
 
-function PlayedCardSlot({ card, label, isDropZone, dropRef, isDragHovering }: { card: CardInstance | null; label: string; isDropZone?: boolean; dropRef?: React.RefObject<HTMLDivElement | null>; isDragHovering?: boolean }) {
+function PlayedCardSlot({ card, label, isDropZone, dropRef, isDragHovering, isMobile }: { card: CardInstance | null; label: string; isDropZone?: boolean; dropRef?: React.RefObject<HTMLDivElement | null>; isDragHovering?: boolean; isMobile: boolean }) {
+  const slotWidth = isMobile ? 80 : 118;
+  const slotHeight = isMobile ? 114 : 168;
+  const bracketSize = isMobile ? 6 : 10;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, zIndex: 1 }}>
       <label style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, letterSpacing: "0.08em" }}>{label}</label>
       <div ref={dropRef as any} style={{
-        width: 118, height: 168,
+        width: slotWidth, height: slotHeight,
         border: isDragHovering ? `2px solid ${T.gold}` : `1.5px dashed ${T.goldDark}60`,
         background: isDragHovering ? `${T.gold}10` : T.panelInner,
         position: "relative", overflow: "hidden",
@@ -405,7 +425,7 @@ function PlayedCardSlot({ card, label, isDropZone, dropRef, isDragHovering }: { 
         transition: "all 0.3s",
       }}>
         {[{ top: 4, left: 4 }, { top: 4, right: 4 }, { bottom: 4, left: 4 }, { bottom: 4, right: 4 }].map((pos, i) => (
-          <div key={i} style={{ position: "absolute", width: 10, height: 10, borderTop: i < 2 ? `1px solid ${T.gold}` : undefined, borderBottom: i >= 2 ? `1px solid ${T.gold}` : undefined, borderLeft: i % 2 === 0 ? `1px solid ${T.gold}` : undefined, borderRight: i % 2 === 1 ? `1px solid ${T.gold}` : undefined, ...pos }} />
+          <div key={i} style={{ position: "absolute", width: bracketSize, height: bracketSize, borderTop: i < 2 ? `1px solid ${T.gold}` : undefined, borderBottom: i >= 2 ? `1px solid ${T.gold}` : undefined, borderLeft: i % 2 === 0 ? `1px solid ${T.gold}` : undefined, borderRight: i % 2 === 1 ? `1px solid ${T.gold}` : undefined, ...pos }} />
         ))}
         <AnimatePresence>
           {card ? (
@@ -429,11 +449,15 @@ function PlayedCardSlot({ card, label, isDropZone, dropRef, isDragHovering }: { 
   );
 }
 
-function FighterRow({ label, hp, maxHp, emoji, hpVariant, statusText, shake, isEnemy = false }: { label: string; hp: number; maxHp: number; emoji: string; hpVariant: "gold" | "silver"; statusText: string; shake: boolean; isEnemy?: boolean }) {
+function FighterRow({ label, hp, maxHp, emoji, hpVariant, statusText, shake, isEnemy = false, isMobile }: { label: string; hp: number; maxHp: number; emoji: string; hpVariant: "gold" | "silver"; statusText: string; shake: boolean; isEnemy?: boolean; isMobile: boolean }) {
+  const emojiBoxSize = isMobile ? 40 : 56;
+  const padding = isMobile ? "8px 12px" : "14px 20px";
+  const gap = isMobile ? 10 : 16;
+
   return (
-    <OrnatePanel style={{ borderRadius: 0 }} innerStyle={{ padding: "14px 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <motion.div animate={shake ? { x: [-7,7,-7,7,0], transition: { duration: 0.4 } } : {}} style={{ width: 56, height: 56, flexShrink: 0, background: isEnemy ? "radial-gradient(circle at 40% 35%, #2a0040, #0d0010)" : "radial-gradient(circle at 40% 35%, #001030, #000818)", border: `1.5px solid ${isEnemy ? "#5a2080" : T.goldDark}`, boxShadow: isEnemy ? "0 0 16px rgba(90,32,128,0.5)" : `0 0 16px ${T.goldGlow}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
+    <OrnatePanel style={{ borderRadius: 0 }} innerStyle={{ padding }}>
+      <div style={{ display: "flex", alignItems: "center", gap }}>
+        <motion.div animate={shake ? { x: [-7,7,-7,7,0], transition: { duration: 0.4 } } : {}} style={{ width: emojiBoxSize, height: emojiBoxSize, flexShrink: 0, background: isEnemy ? "radial-gradient(circle at 40% 35%, #2a0040, #0d0010)" : "radial-gradient(circle at 40% 35%, #001030, #000818)", border: `1.5px solid ${isEnemy ? "#5a2080" : T.goldDark}`, boxShadow: isEnemy ? "0 0 16px rgba(90,32,128,0.5)" : `0 0 16px ${T.goldGlow}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 18 : 26 }}>
           {emoji}
         </motion.div>
         <div style={{ flex: 1 }}><HPBar hp={hp} maxHp={maxHp} label={label} variant={hpVariant} /></div>
@@ -507,6 +531,15 @@ function LogPanel({ logs }: { logs: string[] }) {
 export function CardGame() {
   const MAX_PLAYER_HP = 300;
   const MAX_ENEMY_HP = 500;
+
+  // ── Mobile responsive detection ──
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // ── Intro animation state ──
   type IntroStage = "black" | "logo" | "text" | "fadeout" | "done";
@@ -758,7 +791,7 @@ export function CardGame() {
               } : {}}
               transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], times: [0, 0.6, 1] }}
               style={{
-                width: 140, height: 140, objectFit: "contain",
+                width: isMobile ? 100 : 140, height: isMobile ? 100 : 140, objectFit: "contain",
                 position: "relative", zIndex: 2,
                 filter: `drop-shadow(0 0 40px ${T.goldGlow}) drop-shadow(0 0 80px ${T.goldGlow})`,
               }}
@@ -787,10 +820,10 @@ export function CardGame() {
                 gap: 12, marginTop: 28, position: "relative", zIndex: 2,
               }}
             >
-              <GoldDivider width={340} />
+              <GoldDivider width={isMobile ? 260 : 340} />
               <h1 style={{
                 fontFamily: "'Market Sans', sans-serif",
-                fontSize: "var(--text-h2)",
+                fontSize: isMobile ? "var(--text-p)" : "var(--text-h2)",
                 fontWeight: "var(--font-weight-bold)",
                 margin: 0, color: T.textGold,
                 letterSpacing: "0.16em",
@@ -819,7 +852,7 @@ export function CardGame() {
               >
                 ART BY GABRIEL ROCHA
               </motion.p>
-              <GoldDivider width={340} />
+              <GoldDivider width={isMobile ? 260 : 340} />
 
               {/* START GAME button */}
               <motion.button
@@ -834,7 +867,7 @@ export function CardGame() {
                   background: "transparent",
                   border: `1.5px solid ${T.gold}`,
                   borderRadius: 0,
-                  padding: "14px 56px",
+                  padding: isMobile ? "10px 40px" : "14px 56px",
                   fontFamily: "'Market Sans', sans-serif",
                   fontSize: "var(--text-p)",
                   fontWeight: "var(--font-weight-bold)",
@@ -904,8 +937,8 @@ export function CardGame() {
       {/* POWER PICKER OVERLAY */}
       <AnimatePresence>
         {choosingPowerCard && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 150, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0 }}>
-            <motion.div initial={{ scale: 0.7, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.7, opacity: 0, y: 30 }} transition={{ type: "spring", stiffness: 200, damping: 22 }} style={{ width: "100%", maxWidth: 560, background: T.panel, border: `1.5px solid ${T.gold}`, boxShadow: `0 0 0 3px ${T.black}, 0 0 0 5px ${T.goldDark}50, 0 0 60px ${T.goldGlow}, 0 24px 80px rgba(0,0,0,0.9)`, position: "relative", overflow: "hidden" }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 150, background: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0, padding: isMobile ? "20px" : "0" }}>
+            <motion.div initial={{ scale: 0.7, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.7, opacity: 0, y: 30 }} transition={{ type: "spring", stiffness: 200, damping: 22 }} style={{ width: "100%", maxWidth: isMobile ? "95vw" : 560, background: T.panel, border: `1.5px solid ${T.gold}`, boxShadow: `0 0 0 3px ${T.black}, 0 0 0 5px ${T.goldDark}50, 0 0 60px ${T.goldGlow}, 0 24px 80px rgba(0,0,0,0.9)`, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -1, left: -1, zIndex: 2 }}><CornerOrnament rotate={0}/></div>
               <div style={{ position: "absolute", top: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={90}/></div>
               <div style={{ position: "absolute", bottom: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={180}/></div>
@@ -979,42 +1012,54 @@ export function CardGame() {
         initial={{ opacity: 0, y: 60, scale: 0.96 }}
         animate={introStage === "done" ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.96 }}
         transition={{ type: "spring", stiffness: 120, damping: 20, mass: 1.2, delay: 0.1 }}
-        style={{ width: "100%", maxWidth: 900, display: "flex", flexDirection: "column", gap: 0, position: "relative", zIndex: 1 }}
+        style={{ width: "100%", maxWidth: isMobile ? "100%" : 900, display: "flex", flexDirection: "column", gap: 0, position: "relative", zIndex: 1 }}
       >
 
         {/* Outer frame borders */}
-        <div style={{ position: "absolute", inset: -6, border: `1px solid ${T.goldDark}50`, pointerEvents: "none", zIndex: 0 }} />
-        <div style={{ position: "absolute", inset: -10, border: `1px solid ${T.goldDark}25`, pointerEvents: "none", zIndex: 0 }} />
+        {!isMobile && (
+          <>
+            <div style={{ position: "absolute", inset: -6, border: `1px solid ${T.goldDark}50`, pointerEvents: "none", zIndex: 0 }} />
+            <div style={{ position: "absolute", inset: -10, border: `1px solid ${T.goldDark}25`, pointerEvents: "none", zIndex: 0 }} />
+          </>
+        )}
 
-        {/* Corner icons */}
-        <div style={{ position: "absolute", top: -44, left: -44, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><GearsIcon size={90} /></div>
-        <div style={{ position: "absolute", top: -44, right: -44, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><DragonIcon size={90} /></div>
-        <div style={{ position: "absolute", bottom: -30, left: -30, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><SoccerBallIcon size={60} /></div>
-        <div style={{ position: "absolute", bottom: -38, right: -48, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><RifleIcon size={110} /></div>
+        {/* Corner icons - hidden on mobile */}
+        {!isMobile && (
+          <>
+            <div style={{ position: "absolute", top: -44, left: -44, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><GearsIcon size={90} /></div>
+            <div style={{ position: "absolute", top: -44, right: -44, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><DragonIcon size={90} /></div>
+            <div style={{ position: "absolute", bottom: -30, left: -30, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><SoccerBallIcon size={60} /></div>
+            <div style={{ position: "absolute", bottom: -38, right: -48, zIndex: 10, opacity: 0.55, filter: `drop-shadow(0 0 8px ${T.goldGlow})` }}><RifleIcon size={110} /></div>
+          </>
+        )}
 
-        <SideRailOrnament side="left" />
-        <SideRailOrnament side="right" />
+        {!isMobile && (
+          <>
+            <SideRailOrnament side="left" />
+            <SideRailOrnament side="right" />
+          </>
+        )}
 
         {/* TITLE HEADER */}
-        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderBottom: "none", padding: "14px 24px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, position: "relative", overflow: "hidden" }}>
+        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderBottom: "none", padding: isMobile ? "10px 16px 8px" : "14px 24px 10px", display: "flex", flexDirection: "column", alignItems: "center", gap: isMobile ? 6 : 8, position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -20, left: "50%", transform: "translateX(-50%)", width: 300, height: 120, pointerEvents: "none" }}>
             <svg width="300" height="120" viewBox="0 0 300 120" style={{ opacity: 0.06 }}>
               {Array.from({ length: 12 }).map((_, i) => { const a = (i * 15 - 82.5) * Math.PI / 180; return <line key={i} x1="150" y1="100" x2={150 + Math.cos(a) * 200} y2={100 + Math.sin(a) * 200} stroke={T.gold} strokeWidth="1" />; })}
             </svg>
           </div>
-          <img src={logoImg} alt="SVP Logo" draggable={false} style={{ width: 72, height: 72, objectFit: "contain", filter: `drop-shadow(0 0 16px ${T.goldGlow})`, position: "relative", zIndex: 1 }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 16, width: "100%", position: "relative", zIndex: 1 }}>
-            <div style={{ flex: 1 }}><GoldDivider /></div>
+          <img src={logoImg} alt="SVP Logo" draggable={false} style={{ width: isMobile ? 48 : 72, height: isMobile ? 48 : 72, objectFit: "contain", filter: `drop-shadow(0 0 16px ${T.goldGlow})`, position: "relative", zIndex: 1 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 16, width: "100%", position: "relative", zIndex: 1 }}>
+            {!isMobile && <div style={{ flex: 1 }}><GoldDivider /></div>}
             <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <h3 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h3)", fontWeight: "var(--font-weight-bold)", margin: 0, color: T.textGold, letterSpacing: "0.14em", textShadow: `0 0 20px ${T.goldGlow}` }}>SVP TRADING CARD GAME</h3>
-              <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, margin: 0, letterSpacing: "0.08em" }}>FIRST EDITION  {"\u00B7"}  {"\u00A9"}2026  {"\u00B7"}  ART BY GABRIEL ROCHA</p>
+              <h3 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: isMobile ? "var(--text-label)" : "var(--text-h3)", fontWeight: "var(--font-weight-bold)", margin: 0, color: T.textGold, letterSpacing: "0.14em", textShadow: `0 0 20px ${T.goldGlow}` }}>SVP TRADING CARD GAME</h3>
+              {!isMobile && <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, margin: 0, letterSpacing: "0.08em" }}>FIRST EDITION  {"\u00B7"}  {"\u00A9"}2026  {"\u00B7"}  ART BY GABRIEL ROCHA</p>}
             </div>
-            <div style={{ flex: 1 }}><GoldDivider /></div>
+            {!isMobile && <div style={{ flex: 1 }}><GoldDivider /></div>}
           </div>
         </div>
 
         {/* ENEMY ROW */}
-        <FighterRow label={"\uD83D\uDC79 DARK OVERLORD"} hp={enemyHP} maxHp={MAX_ENEMY_HP} emoji={"\uD83D\uDC79"} hpVariant="silver" statusText={phase === "enemy-turn" ? "\u26A1 STRIKING..." : "AWAITING..."} shake={enemyShake} isEnemy={true} />
+        <FighterRow label={"\uD83D\uDC79 DARK OVERLORD"} hp={enemyHP} maxHp={MAX_ENEMY_HP} emoji={"\uD83D\uDC79"} hpVariant="silver" statusText={phase === "enemy-turn" ? "\u26A1 STRIKING..." : "AWAITING..."} shake={enemyShake} isEnemy={true} isMobile={isMobile} />
 
         {/* ENEMY ACTION BAR — shows what card+power the enemy used */}
         <EnemyActionBar action={enemyAction} />
@@ -1023,9 +1068,9 @@ export function CardGame() {
         <div style={{
           background: `radial-gradient(ellipse at center, #0f0c00 0%, ${T.panelInner} 100%)`,
           border: `1.5px solid ${T.gold}`, borderTop: "none", borderBottom: "none",
-          padding: "24px 32px",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 40,
-          minHeight: 240, position: "relative", overflow: "hidden",
+          padding: isMobile ? "12px 8px" : "24px 32px",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 16 : 40,
+          minHeight: isMobile ? 160 : 240, position: "relative", overflow: "hidden",
         }}>
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: `repeating-linear-gradient(45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 28px), repeating-linear-gradient(-45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 28px)` }} />
           <ArtDecoArchOverlay />
@@ -1033,34 +1078,34 @@ export function CardGame() {
           <div style={{ position: "absolute", inset: 14, border: `0.5px solid ${T.gold}0a`, pointerEvents: "none" }} />
 
           {/* Enemy slot */}
-          <PlayedCardSlot card={enemyPlayed} label="ENEMY FIELD" />
+          <PlayedCardSlot card={enemyPlayed} label="ENEMY FIELD" isMobile={isMobile} />
 
           {/* VS pillar */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 1 }}>
             <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,7 7,14 0,7" fill={T.gold} opacity="0.5" /></svg>
-            <motion.div animate={{ boxShadow: [`0 0 10px ${T.goldGlow}`, `0 0 28px ${T.goldGlow}`, `0 0 10px ${T.goldGlow}`] }} transition={{ duration: 2.5, repeat: Infinity }} style={{ width: 60, height: 60, background: `radial-gradient(circle at 40% 35%, #1a1000, #0a0800)`, border: `1.5px solid ${T.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Market Sans', sans-serif", fontWeight: "var(--font-weight-bold)", fontSize: 18, color: T.textGold, letterSpacing: "0.05em" }}>VS</motion.div>
+            <motion.div animate={{ boxShadow: [`0 0 10px ${T.goldGlow}`, `0 0 28px ${T.goldGlow}`, `0 0 10px ${T.goldGlow}`] }} transition={{ duration: 2.5, repeat: Infinity }} style={{ width: isMobile ? 40 : 60, height: isMobile ? 40 : 60, background: `radial-gradient(circle at 40% 35%, #1a1000, #0a0800)`, border: `1.5px solid ${T.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Market Sans', sans-serif", fontWeight: "var(--font-weight-bold)", fontSize: isMobile ? 14 : 18, color: T.textGold, letterSpacing: "0.05em" }}>VS</motion.div>
             <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,0 14,7 7,14 0,7" fill={T.gold} opacity="0.5" /></svg>
           </div>
 
           {/* Player slot — drop zone */}
-          <PlayedCardSlot card={playerPlayed} label="YOUR FIELD" isDropZone={isPlayerTurn && !playerPlayed} dropRef={dropZoneRef} isDragHovering={isDragHover} />
+          <PlayedCardSlot card={playerPlayed} label="YOUR FIELD" isDropZone={isPlayerTurn && !playerPlayed} dropRef={dropZoneRef} isDragHovering={isDragHover} isMobile={isMobile} />
         </div>
 
         {/* PLAYER ROW */}
-        <FighterRow label={"\uD83E\uDDD1\u200D\uD83C\uDFAE COMMANDER"} hp={playerHP} maxHp={MAX_PLAYER_HP} emoji={"\uD83E\uDDD1\u200D\uD83C\uDFAE"} hpVariant="gold" statusText={isPlayerTurn ? "\u2726 YOUR TURN" : "\u23F3 STANDBY"} shake={playerShake} isEnemy={false} />
+        <FighterRow label={"\uD83E\uDDD1\u200D\uD83C\uDFAE COMMANDER"} hp={playerHP} maxHp={MAX_PLAYER_HP} emoji={"\uD83E\uDDD1\u200D\uD83C\uDFAE"} hpVariant="gold" statusText={isPlayerTurn ? "\u2726 YOUR TURN" : "\u23F3 STANDBY"} shake={playerShake} isEnemy={false} isMobile={isMobile} />
 
         {/* LOG */}
         <div style={{ borderTop: "none" }}><LogPanel logs={logs} /></div>
 
         {/* HAND + DECK */}
-        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderTop: "none", padding: "20px 24px 16px", display: "flex", alignItems: "flex-end", gap: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1 }}>
+        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderTop: "none", padding: isMobile ? "12px 16px 12px" : "20px 24px 16px", display: "flex", alignItems: "flex-end", gap: isMobile ? 12 : 24, flexDirection: isMobile ? "column" : "row" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1, width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <CrosshairIcon size={14} color={T.gold} />
               <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>HAND ({hand.length}/5)</span>
               <CrosshairIcon size={14} color={T.gold} />
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 8, width: "100%", minHeight: 190, paddingBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: isMobile ? 6 : 8, width: "100%", minHeight: isMobile ? 130 : 190, paddingBottom: 4, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden" }}>
               <AnimatePresence>
                 {hand.map((card) => (
                   <DraggableCardView
@@ -1069,6 +1114,7 @@ export function CardGame() {
                     onDragPlay={handleDragPlay}
                     disabled={!isPlayerTurn || !!choosingPowerCard}
                     dropZoneRef={dropZoneRef}
+                    isMobile={isMobile}
                   />
                 ))}
               </AnimatePresence>
@@ -1081,9 +1127,9 @@ export function CardGame() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderLeft: `1px solid ${T.goldDark}50`, paddingLeft: 20, flexShrink: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderLeft: isMobile ? "none" : `1px solid ${T.goldDark}50`, borderTop: isMobile ? `1px solid ${T.goldDark}50` : "none", paddingLeft: isMobile ? 0 : 20, paddingTop: isMobile ? 8 : 0, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
             <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>DECK</span>
-            <DeckStack count={deck.length} onDraw={drawCard} canDraw={isPlayerTurn && deck.length > 0 && hand.length < 5} />
+            <DeckStack count={deck.length} onDraw={drawCard} canDraw={isPlayerTurn && deck.length > 0 && hand.length < 5} isMobile={isMobile} />
             <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, textAlign: "center" }}>
               {isPlayerTurn && deck.length > 0 && hand.length < 5 ? "CLICK TO DRAW" : hand.length >= 5 ? "HAND FULL" : "DECK EMPTY"}
             </span>
@@ -1096,7 +1142,7 @@ export function CardGame() {
             {choosingPowerCard
               ? "\u25C6  CHOOSE WHICH POWER TO UNLEASH  \u25C6"
               : isPlayerTurn
-              ? "\u25C6  DRAG A CARD TO YOUR FIELD TO DEPLOY IT  \u25C6"
+              ? isMobile ? "\u25C6  TAP A CARD TO DEPLOY IT  \u25C6" : "\u25C6  DRAG A CARD TO YOUR FIELD TO DEPLOY IT  \u25C6"
               : phase === "enemy-turn"
               ? "\u25C6  DARK OVERLORD IS MAKING A MOVE...  \u25C6"
               : "\u25C6  STANDBY  \u25C6"}
