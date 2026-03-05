@@ -500,7 +500,7 @@ function EnemyActionBar({ action }: { action: EnemyAction | null }) {
               <p style={{ margin: "2px 0 0", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textSilver }}>{action.power.desc}</p>
             </div>
             <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-              {action.dmg > 0 && <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: "#ef4444", background: "#ef444418", border: "1px solid #ef444440", padding: "1px 8px", letterSpacing: "0.06em" }}>{action.dmg} DMG</span>}
+              {action.dmg > 0 && <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: "#ef4444", background: "#ef444418", border: "1px solid #ef444440", padding: "1px 8px", letterSpacing: "0.06em" }}>{action.dmg} DANO</span>}
               {action.heal > 0 && <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: "#a78bca", background: "#a78bca18", border: "1px solid #a78bca40", padding: "1px 8px", letterSpacing: "0.06em" }}>+{action.heal} HP</span>}
             </div>
           </div>
@@ -515,7 +515,7 @@ function LogPanel({ logs }: { logs: string[] }) {
     <OrnatePanel corners={false} style={{ borderRadius: 0 }} innerStyle={{ padding: "8px 14px" }}>
       <div style={{ maxHeight: 80, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
         {logs.length === 0 ? (
-          <p style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim }}>{"\u25C6"} Awaiting first move...</p>
+          <p style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim }}>{"\u25C6"} Aguardando primeira jogada...</p>
         ) : (
           logs.slice(-6).reverse().map((log, i) => (
             <p key={i} style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: i === 0 ? T.textWhite : T.textDim, borderLeft: i === 0 ? `2px solid ${T.gold}` : "2px solid transparent", paddingLeft: 6 }}>{log}</p>
@@ -637,9 +637,9 @@ export function CardGame() {
 
       setEnemyAction({ card: enemyCard, power: chosenPower, dmg: dmgToPlayer, heal: healEnemy });
       let msg = `\uD83D\uDC79 ${enemyCard.name} \u2014 ${chosenPower.name}!`;
-      if (dmgToPlayer > 0) msg += ` ${dmgToPlayer} DMG to you!`;
-      if (healEnemy > 0) msg += ` +${healEnemy}HP recovered.`;
-      if (selfDmg > 0) msg += ` (${selfDmg} self-dmg)`;
+      if (dmgToPlayer > 0) msg += ` ${dmgToPlayer} de DANO em você!`;
+      if (healEnemy > 0) msg += ` +${healEnemy}HP recuperados.`;
+      if (selfDmg > 0) msg += ` (${selfDmg} auto-dano)`;
       addLog(msg);
 
       // Step 3: After showing result, return to player turn
@@ -670,9 +670,9 @@ export function CardGame() {
     if (effect.damage) {
       setEnemyHP((h) => { const n = Math.max(0, h - effect.damage!); if (n === 0) setPhase("game-over"); return n; });
       setEnemyShake(true); setTimeout(() => setEnemyShake(false), 500);
-      msg += ` \u2014 ${effect.damage} DMG dealt!`;
+      msg += ` \u2014 ${effect.damage} de DANO causado!`;
     }
-    if (effect.selfDamage) { setPlayerHP((h) => Math.max(0, h - effect.selfDamage!)); msg += ` (${effect.selfDamage} self-dmg)`; }
+    if (effect.selfDamage) { setPlayerHP((h) => Math.max(0, h - effect.selfDamage!)); msg += ` (${effect.selfDamage} auto-dano)`; }
     addLog(msg);
     setChoosingPowerCard(null);
     setPhase("enemy-turn");
@@ -682,7 +682,7 @@ export function CardGame() {
     if (hand.length >= 5 || deck.length === 0) return;
     const [drawn, ...rest] = deck;
     setDeck(rest); setHand((h) => [...h, drawn]);
-    addLog(`\uD83C\uDFB4 Drew ${drawn.def.name} from the deck.`);
+    addLog(`\uD83C\uDFB4 Comprou ${drawn.def.name} do baralho.`);
   }
 
   function restartGame() {
@@ -839,7 +839,7 @@ export function CardGame() {
                 color: T.textDim, margin: 0,
                 letterSpacing: "0.1em",
               }}>
-                FIRST EDITION  {"\u00B7"}  {"\u00A9"}2026
+                PRIMEIRA EDIÇÃO  {"\u00B7"}  {"\u00A9"}2026
               </p>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -852,7 +852,7 @@ export function CardGame() {
                   letterSpacing: "0.08em",
                 }}
               >
-                ART BY GABRIEL ROCHA
+                ARTE POR GABRIEL ROCHA
               </motion.p>
               <GoldDivider width={isMobile ? 260 : 340} />
 
@@ -891,7 +891,7 @@ export function CardGame() {
                     pointerEvents: "none",
                   }}
                 />
-                {"\u25C6"}  START GAME  {"\u25C6"}
+                {"\u25C6"}  INICIAR JOGO  {"\u25C6"}
               </motion.button>
             </motion.div>
 
@@ -927,11 +927,11 @@ export function CardGame() {
             <motion.div initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 180, damping: 18 }} style={{ textAlign: "center" }}>
               <GoldDivider width={300} />
               <div style={{ margin: "24px 0 12px", fontSize: 72 }}>{playerWon ? "\uD83C\uDFC6" : "\uD83D\uDC80"}</div>
-              <h2 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h2)", fontWeight: "var(--font-weight-bold)", margin: 0, color: playerWon ? T.goldLight : "#ef4444", textShadow: `0 0 40px ${playerWon ? T.goldGlow : "rgba(239,68,68,0.5)"}`, letterSpacing: "0.1em" }}>{playerWon ? "VICTORY" : "DEFEATED"}</h2>
-              <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-p)", color: T.textSilver, marginTop: 10 }}>{playerWon ? "The Dark Overlord has been vanquished." : "You fell in glorious battle."}</p>
+              <h2 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h2)", fontWeight: "var(--font-weight-bold)", margin: 0, color: playerWon ? T.goldLight : "#ef4444", textShadow: `0 0 40px ${playerWon ? T.goldGlow : "rgba(239,68,68,0.5)"}`, letterSpacing: "0.1em" }}>{playerWon ? "VITÓRIA" : "DERROTADO"}</h2>
+              <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-p)", color: T.textSilver, marginTop: 10 }}>{playerWon ? "O Dark Overlord foi derrotado." : "Você caiu em batalha gloriosa."}</p>
               <div style={{ marginTop: 16 }}><GoldDivider width={300} /></div>
             </motion.div>
-            <motion.button whileHover={{ scale: 1.05, boxShadow: `0 0 24px ${T.goldGlow}` }} whileTap={{ scale: 0.97 }} onClick={restartGame} style={{ background: "transparent", border: `1.5px solid ${T.gold}`, borderRadius: 0, padding: "12px 48px", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-p)", fontWeight: "var(--font-weight-bold)", color: T.textGold, cursor: "pointer", letterSpacing: "0.12em", boxShadow: `inset 0 1px 0 ${T.gold}30` }}>{"\u25C6"} PLAY AGAIN {"\u25C6"}</motion.button>
+            <motion.button whileHover={{ scale: 1.05, boxShadow: `0 0 24px ${T.goldGlow}` }} whileTap={{ scale: 0.97 }} onClick={restartGame} style={{ background: "transparent", border: `1.5px solid ${T.gold}`, borderRadius: 0, padding: "12px 48px", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-p)", fontWeight: "var(--font-weight-bold)", color: T.textGold, cursor: "pointer", letterSpacing: "0.12em", boxShadow: `inset 0 1px 0 ${T.gold}30` }}>{"\u25C6"} JOGAR DE NOVO {"\u25C6"}</motion.button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -958,7 +958,7 @@ export function CardGame() {
                   <div style={{ marginTop: 6 }}><GoldDivider /></div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  {[{ val: choosingPowerCard.def.power, lbl: "PWR", c: T.textGold }, { val: choosingPowerCard.def.cost, lbl: "COST", c: T.silver }].map(({ val, lbl, c }) => (
+                  {[{ val: choosingPowerCard.def.power, lbl: "POD", c: T.textGold }, { val: choosingPowerCard.def.cost, lbl: "CUSTO", c: T.silver }].map(({ val, lbl, c }) => (
                     <div key={lbl} style={{ textAlign: "center", border: `1px solid ${T.goldDark}`, padding: "2px 8px", background: T.panelInner }}>
                       <p style={{ margin: 0, color: c, fontSize: 16, fontFamily: "'Market Sans', sans-serif", fontWeight: "var(--font-weight-bold)" }}>{val}</p>
                       <label style={{ fontFamily: "'Market Sans', sans-serif", color: T.textDim, letterSpacing: "0.06em" }}>{lbl}</label>
@@ -970,7 +970,7 @@ export function CardGame() {
               {/* Label */}
               <div style={{ padding: "10px 24px 6px", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, position: "relative", zIndex: 1 }}>
                 <CrosshairIcon size={12} color={T.gold} />
-                <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.14em", fontWeight: "var(--font-weight-bold)" }}>CHOOSE YOUR POWER</span>
+                <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.14em", fontWeight: "var(--font-weight-bold)" }}>ESCOLHA SEU PODER</span>
                 <CrosshairIcon size={12} color={T.gold} />
               </div>
 
@@ -978,9 +978,9 @@ export function CardGame() {
               <div style={{ padding: "8px 24px 20px", display: "flex", gap: 12, position: "relative", zIndex: 1 }}>
                 {choosingPowerCard.def.powers.map((pw, idx) => {
                   const tags: string[] = [];
-                  if (pw.effect.damage) tags.push(`${pw.effect.damage} DMG`);
+                  if (pw.effect.damage) tags.push(`${pw.effect.damage} DANO`);
                   if (pw.effect.heal) tags.push(`+${pw.effect.heal} HP`);
-                  if (pw.effect.selfDamage) tags.push(`-${pw.effect.selfDamage} SELF`);
+                  if (pw.effect.selfDamage) tags.push(`-${pw.effect.selfDamage} AUTO`);
                   return (
                     <motion.button key={idx} whileHover={{ scale: 1.03, boxShadow: `0 0 24px ${choosingPowerCard.def.color}40, 0 0 0 1px ${T.gold}` }} whileTap={{ scale: 0.97 }} onClick={() => executePower(idx as 0 | 1)} style={{ flex: 1, background: `linear-gradient(135deg, ${T.panelInner}, ${choosingPowerCard.def.color}0c)`, border: `1.5px solid ${T.goldDark}`, borderRadius: 0, padding: "14px 16px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 8, textAlign: "left", transition: "border-color 0.2s", position: "relative", overflow: "hidden" }}>
                       <div style={{ position: "absolute", top: 0, right: 0, background: T.goldDark, padding: "2px 8px" }}>
@@ -990,7 +990,7 @@ export function CardGame() {
                       <p style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textSilver, lineHeight: 1.4 }}>{pw.desc}</p>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
                         {tags.map((tag) => (
-                          <span key={tag} style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: tag.includes("SELF") ? "#ef4444" : tag.includes("+") ? "#4ade80" : T.textGold, background: tag.includes("SELF") ? "#ef444418" : tag.includes("+") ? "#4ade8018" : `${T.gold}18`, border: `1px solid ${tag.includes("SELF") ? "#ef444440" : tag.includes("+") ? "#4ade8040" : T.goldDark}`, padding: "1px 8px", letterSpacing: "0.06em" }}>{tag}</span>
+                          <span key={tag} style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: tag.includes("AUTO") ? "#ef4444" : tag.includes("+") ? "#4ade80" : T.textGold, background: tag.includes("AUTO") ? "#ef444418" : tag.includes("+") ? "#4ade8018" : `${T.gold}18`, border: `1px solid ${tag.includes("AUTO") ? "#ef444440" : tag.includes("+") ? "#4ade8040" : T.goldDark}`, padding: "1px 8px", letterSpacing: "0.06em" }}>{tag}</span>
                         ))}
                       </div>
                     </motion.button>
@@ -1001,7 +1001,7 @@ export function CardGame() {
               {/* Cancel */}
               <div style={{ borderTop: `1px solid ${T.goldDark}40`, padding: "8px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
                 <motion.button whileHover={{ color: T.textGold }} onClick={() => { setHand((h) => [...h, choosingPowerCard!]); setPlayerPlayed(null); setChoosingPowerCard(null); }} style={{ background: "none", border: "none", borderRadius: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 16px" }}>
-                  {"\u25C6"} CANCEL {"\u2014"} RETURN TO HAND {"\u25C6"}
+                  {"\u25C6"} CANCELAR {"\u2014"} VOLTAR PRA MÃO {"\u25C6"}
                 </motion.button>
               </div>
             </motion.div>
@@ -1054,14 +1054,14 @@ export function CardGame() {
             {!isMobile && <div style={{ flex: 1 }}><GoldDivider /></div>}
             <div style={{ textAlign: "center", flexShrink: 0 }}>
               <h3 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: isMobile ? "var(--text-label)" : "var(--text-h3)", fontWeight: "var(--font-weight-bold)", margin: 0, color: T.textGold, letterSpacing: "0.14em", textShadow: `0 0 20px ${T.goldGlow}` }}>SVP TRADING CARD GAME</h3>
-              {!isMobile && <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, margin: 0, letterSpacing: "0.08em" }}>FIRST EDITION  {"\u00B7"}  {"\u00A9"}2026  {"\u00B7"}  ART BY GABRIEL ROCHA</p>}
+              {!isMobile && <p style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, margin: 0, letterSpacing: "0.08em" }}>PRIMEIRA EDIÇÃO  {"\u00B7"}  {"\u00A9"}2026  {"\u00B7"}  ARTE POR GABRIEL ROCHA</p>}
             </div>
             {!isMobile && <div style={{ flex: 1 }}><GoldDivider /></div>}
           </div>
         </div>
 
         {/* ENEMY ROW */}
-        <FighterRow label={"\uD83D\uDC79 DARK OVERLORD"} hp={enemyHP} maxHp={MAX_ENEMY_HP} emoji={"\uD83D\uDC79"} hpVariant="silver" statusText={phase === "enemy-turn" ? "\u26A1 STRIKING..." : "AWAITING..."} shake={enemyShake} isEnemy={true} isMobile={isMobile} />
+        <FighterRow label={"\uD83D\uDC79 DARK OVERLORD"} hp={enemyHP} maxHp={MAX_ENEMY_HP} emoji={"\uD83D\uDC79"} hpVariant="silver" statusText={phase === "enemy-turn" ? "\u26A1 ATACANDO..." : "AGUARDANDO..."} shake={enemyShake} isEnemy={true} isMobile={isMobile} />
 
         {/* ENEMY ACTION BAR — shows what card+power the enemy used */}
         <EnemyActionBar action={enemyAction} />
@@ -1080,7 +1080,7 @@ export function CardGame() {
           <div style={{ position: "absolute", inset: 14, border: `0.5px solid ${T.gold}0a`, pointerEvents: "none" }} />
 
           {/* Enemy slot */}
-          <PlayedCardSlot card={enemyPlayed} label="ENEMY FIELD" isMobile={isMobile} />
+          <PlayedCardSlot card={enemyPlayed} label="CAMPO INIMIGO" isMobile={isMobile} />
 
           {/* VS pillar */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 1 }}>
@@ -1090,11 +1090,11 @@ export function CardGame() {
           </div>
 
           {/* Player slot — drop zone */}
-          <PlayedCardSlot card={playerPlayed} label="YOUR FIELD" isDropZone={isPlayerTurn && !playerPlayed} dropRef={dropZoneRef} isDragHovering={isDragHover} isMobile={isMobile} />
+          <PlayedCardSlot card={playerPlayed} label="SEU CAMPO" isDropZone={isPlayerTurn && !playerPlayed} dropRef={dropZoneRef} isDragHovering={isDragHover} isMobile={isMobile} />
         </div>
 
         {/* PLAYER ROW */}
-        <FighterRow label={"\uD83E\uDDD1\u200D\uD83C\uDFAE COMMANDER"} hp={playerHP} maxHp={MAX_PLAYER_HP} emoji={"\uD83E\uDDD1\u200D\uD83C\uDFAE"} hpVariant="gold" statusText={isPlayerTurn ? "\u2726 YOUR TURN" : "\u23F3 STANDBY"} shake={playerShake} isEnemy={false} isMobile={isMobile} />
+        <FighterRow label={"\uD83E\uDDD1\u200D\uD83C\uDFAE COMANDANTE"} hp={playerHP} maxHp={MAX_PLAYER_HP} emoji={"\uD83E\uDDD1\u200D\uD83C\uDFAE"} hpVariant="gold" statusText={isPlayerTurn ? "\u2726 SUA VEZ" : "\u23F3 AGUARDE"} shake={playerShake} isEnemy={false} isMobile={isMobile} />
 
         {/* LOG */}
         <div style={{ borderTop: "none" }}><LogPanel logs={logs} /></div>
@@ -1104,7 +1104,7 @@ export function CardGame() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1, width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <CrosshairIcon size={14} color={T.gold} />
-              <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>HAND ({hand.length}/5)</span>
+              <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>MÃO ({hand.length}/5)</span>
               <CrosshairIcon size={14} color={T.gold} />
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: isMobile ? 6 : 8, width: "100%", minHeight: isMobile ? 130 : 190, paddingBottom: 4, overflowX: isDraggingCard ? "visible" : (isMobile ? "auto" : "visible"), overflowY: isDraggingCard ? "visible" : "hidden" }}>
@@ -1124,17 +1124,17 @@ export function CardGame() {
               {hand.length === 0 && (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: 0.4 }}>
                   <CrosshairIcon size={32} color={T.gold} />
-                  <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold }}>HAND EMPTY</span>
+                  <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold }}>MÃO VAZIA</span>
                 </div>
               )}
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderLeft: isMobile ? "none" : `1px solid ${T.goldDark}50`, borderTop: isMobile ? `1px solid ${T.goldDark}50` : "none", paddingLeft: isMobile ? 0 : 20, paddingTop: isMobile ? 8 : 0, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
-            <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>DECK</span>
+            <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>BARALHO</span>
             <DeckStack count={deck.length} onDraw={drawCard} canDraw={isPlayerTurn && deck.length > 0 && hand.length < 5} isMobile={isMobile} />
             <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, textAlign: "center" }}>
-              {isPlayerTurn && deck.length > 0 && hand.length < 5 ? "CLICK TO DRAW" : hand.length >= 5 ? "HAND FULL" : "DECK EMPTY"}
+              {isPlayerTurn && deck.length > 0 && hand.length < 5 ? "CLIQUE PARA COMPRAR" : hand.length >= 5 ? "MÃO CHEIA" : "BARALHO VAZIO"}
             </span>
           </div>
         </div>
@@ -1143,12 +1143,12 @@ export function CardGame() {
         <div style={{ background: T.black, border: `1.5px solid ${T.gold}`, borderTop: `1px solid ${T.goldDark}40`, padding: "6px 20px", textAlign: "center" }}>
           <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, letterSpacing: "0.06em" }}>
             {choosingPowerCard
-              ? "\u25C6  CHOOSE WHICH POWER TO UNLEASH  \u25C6"
+              ? "\u25C6  ESCOLHA O PODER A DESENCADEAR  \u25C6"
               : isPlayerTurn
-              ? isMobile ? "\u25C6  TAP A CARD TO DEPLOY IT  \u25C6" : "\u25C6  DRAG A CARD TO YOUR FIELD TO DEPLOY IT  \u25C6"
+              ? isMobile ? "\u25C6  TOQUE UMA CARTA PARA JOGÁ-LA  \u25C6" : "\u25C6  ARRASTE UMA CARTA PARA O SEU CAMPO  \u25C6"
               : phase === "enemy-turn"
-              ? "\u25C6  DARK OVERLORD IS MAKING A MOVE...  \u25C6"
-              : "\u25C6  STANDBY  \u25C6"}
+              ? "\u25C6  DARK OVERLORD ESTÁ FAZENDO SUA JOGADA...  \u25C6"
+              : "\u25C6  AGUARDE  \u25C6"}
           </span>
         </div>
 
