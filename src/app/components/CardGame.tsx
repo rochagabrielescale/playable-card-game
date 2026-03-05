@@ -92,41 +92,56 @@ const CARD_DEFS: CardDef[] = [
 ];
 
 // ─── Tutorial steps ───────────────────────────────────────────────────────────
-const TUTORIAL_STEPS: { title: string; body: string; align: "center" | "bottom" }[] = [
+type TutorialMode = "info" | "action";
+interface TutorialStepDef {
+  title: string;
+  body: string;
+  align: "center" | "bottom" | "top";
+  mode: TutorialMode;
+  actionHint?: string;
+  highlight?: "hand" | "deck";
+}
+const TUTORIAL_STEPS: TutorialStepDef[] = [
   {
     title: "Bem-vindo ao SVP TCG! 🎴",
     body: "Você enfrenta o Dark Overlord. Reduza o HP dele a zero para vencer!\nEle começa com 500HP — você tem 300HP. Use suas cartas com sabedoria!",
-    align: "center",
+    align: "center", mode: "info",
   },
   {
     title: "Barras de HP ❤️",
-    body: "Na parte de cima fica o HP do Dark Overlord (roxo). Na parte de baixo fica o seu HP (dourado). Quando um dos dois chegar a zero, a batalha termina.",
-    align: "center",
+    body: "Na parte de cima fica o HP do Dark Overlord (cinza). Na parte de baixo fica o seu HP (dourado). Quando um dos dois chegar a zero, a batalha termina.",
+    align: "center", mode: "info",
   },
   {
-    title: "Sua Mão 🃏",
-    body: "As cartas na sua MÃO aparecem aqui embaixo. Você começa com 3 cartas. Cada carta tem um nome, Poder (POD) e Custo.",
-    align: "bottom",
+    title: "🃏 Jogue uma Carta!",
+    body: "",
+    align: "bottom", mode: "action",
+    actionHint: "ARRASTE uma carta para o SEU CAMPO ↑   (no celular: TOQUE na carta)",
+    highlight: "hand",
   },
   {
-    title: "Como Jogar uma Carta ▶️",
-    body: "ARRASTE uma carta até o SEU CAMPO no centro do tabuleiro para jogá-la.\nNo celular, TOQUE na carta diretamente.",
-    align: "center",
+    title: "⚡ Escolha um Poder!",
+    body: "",
+    align: "center", mode: "action",
+    actionHint: "Clique em um dos 2 PODERES acima para atacar ou curar",
   },
   {
-    title: "Escolha seu Poder ⚡",
-    body: "Após jogar uma carta, um menu aparece para você escolher entre 2 PODERES. Cada poder tem efeitos diferentes: dano, cura ou auto-dano. Leia com atenção antes de escolher!",
-    align: "center",
+    title: "👹 Vez do Inimigo...",
+    body: "",
+    align: "top", mode: "action",
+    actionHint: "Aguarde o Dark Overlord fazer seu movimento...",
   },
   {
-    title: "Compre Cartas 🎲",
-    body: "Clique no BARALHO (à direita) para comprar uma nova carta. Você pode ter no máximo 5 cartas na mão. Só é possível comprar na sua vez.",
-    align: "bottom",
+    title: "🎲 Compre uma Carta!",
+    body: "",
+    align: "bottom", mode: "action",
+    actionHint: "Clique no BARALHO à direita para comprar uma nova carta →",
+    highlight: "deck",
   },
   {
     title: "Pronto para Batalhar! ⚔️",
-    body: "Após cada jogada sua, o Dark Overlord responde automaticamente. Acompanhe o LOG de batalha para ver o que aconteceu em cada turno. Boa sorte, Comandante!",
-    align: "center",
+    body: "Você aprendeu o básico! Continue jogando e descubra os poderes de cada carta.\nAcompanhe o LOG de batalha para ver o que aconteceu em cada turno. Boa sorte, Comandante!",
+    align: "center", mode: "info",
   },
 ];
 
@@ -691,6 +706,7 @@ export function CardGame() {
       // Step 3: After showing result, return to player turn
       setTimeout(() => {
         setPhase("player-turn");
+        setTutorialStep((s) => (s === 4 ? 5 : s));
       }, 1200);
     }, 1200);
 
@@ -704,6 +720,7 @@ export function CardGame() {
     setPlayerPlayed(cardInst);
     setChoosingPowerCard(cardInst);
     setEnemyAction(null);
+    if (tutorialStep === 2) setTutorialStep(3);
   }
 
   function executePower(powerIndex: 0 | 1) {
@@ -722,6 +739,7 @@ export function CardGame() {
     addLog(msg);
     setChoosingPowerCard(null);
     setPhase("enemy-turn");
+    if (tutorialStep === 3) setTutorialStep(4);
   }
 
   function drawCard() {
@@ -729,6 +747,7 @@ export function CardGame() {
     const [drawn, ...rest] = deck;
     setDeck(rest); setHand((h) => [...h, drawn]);
     addLog(`\uD83C\uDFB4 Comprou ${drawn.def.name} do baralho.`);
+    if (tutorialStep === 5) setTutorialStep(6);
   }
 
   function restartGame() {
@@ -1020,6 +1039,14 @@ export function CardGame() {
                 <CrosshairIcon size={12} color={T.gold} />
               </div>
 
+              {/* Tutorial step 3 hint banner */}
+              {tutorialStep === 3 && (
+                <div style={{ margin: "0 24px 4px", padding: "8px 14px", background: `${T.goldGlow}`, border: `1px solid ${T.gold}80`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "relative", zIndex: 1 }}>
+                  <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.06em" }}>⚡ Escolha um dos poderes abaixo para avançar no guia</span>
+                  <motion.button whileHover={{ color: T.textGold }} onClick={skipTutorial} style={{ background: "none", border: "none", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", flexShrink: 0 }}>{"\u25C6"} Pular</motion.button>
+                </div>
+              )}
+
               {/* Power buttons */}
               <div style={{ padding: "8px 24px 20px", display: "flex", gap: 12, position: "relative", zIndex: 1 }}>
                 {choosingPowerCard.def.powers.map((pw, idx) => {
@@ -1046,7 +1073,7 @@ export function CardGame() {
 
               {/* Cancel */}
               <div style={{ borderTop: `1px solid ${T.goldDark}40`, padding: "8px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
-                <motion.button whileHover={{ color: T.textGold }} onClick={() => { setHand((h) => [...h, choosingPowerCard!]); setPlayerPlayed(null); setChoosingPowerCard(null); }} style={{ background: "none", border: "none", borderRadius: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 16px" }}>
+                <motion.button whileHover={{ color: T.textGold }} onClick={() => { setHand((h) => [...h, choosingPowerCard!]); setPlayerPlayed(null); setChoosingPowerCard(null); if (tutorialStep === 3) setTutorialStep(2); }} style={{ background: "none", border: "none", borderRadius: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 16px" }}>
                   {"\u25C6"} CANCELAR {"\u2014"} VOLTAR PRA MÃO {"\u25C6"}
                 </motion.button>
               </div>
@@ -1056,25 +1083,26 @@ export function CardGame() {
       </AnimatePresence>
 
       {/* ══════════════ TUTORIAL OVERLAY ══════════════ */}
+      {/* Step 3 is rendered as a banner inside the power picker — no separate overlay needed */}
       <AnimatePresence>
-        {tutorialStep !== null && introStage === "done" && (() => {
+        {tutorialStep !== null && tutorialStep !== 3 && introStage === "done" && (() => {
           const step = TUTORIAL_STEPS[tutorialStep];
           const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
-          return (
+          const isInfo = step.mode === "info";
+
+          /* ── INFO step: full blocking modal ── */
+          if (isInfo) return (
             <motion.div
-              key="tutorial-backdrop"
+              key={`tutorial-info-${tutorialStep}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               style={{
                 position: "fixed", inset: 0, zIndex: 400,
-                background: "rgba(0,0,0,0.72)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: step.align === "bottom" ? "flex-end" : "center",
-                padding: step.align === "bottom" ? "0 16px 200px" : "16px",
-                pointerEvents: "none",
+                background: "rgba(0,0,0,0.82)",
+                display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center",
+                padding: "16px", pointerEvents: "none",
               }}
             >
               <motion.div
@@ -1092,15 +1120,11 @@ export function CardGame() {
                   position: "relative", overflow: "hidden",
                 }}
               >
-                {/* Corner ornaments */}
                 <div style={{ position: "absolute", top: -1, left: -1, zIndex: 2 }}><CornerOrnament rotate={0}/></div>
                 <div style={{ position: "absolute", top: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={90}/></div>
                 <div style={{ position: "absolute", bottom: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={180}/></div>
                 <div style={{ position: "absolute", bottom: -1, left: -1, zIndex: 2 }}><CornerOrnament rotate={270}/></div>
-                {/* Diamond pattern bg */}
                 <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: `repeating-linear-gradient(45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 24px), repeating-linear-gradient(-45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 24px)` }} />
-
-                {/* Header */}
                 <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${T.goldDark}50`, position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <CrosshairIcon size={12} color={T.gold} />
@@ -1109,8 +1133,6 @@ export function CardGame() {
                   </div>
                   <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, letterSpacing: "0.06em" }}>{tutorialStep + 1} / {TUTORIAL_STEPS.length}</span>
                 </div>
-
-                {/* Body */}
                 <div style={{ padding: "16px 20px 12px", position: "relative", zIndex: 1 }}>
                   <GoldDivider />
                   <h3 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h3)", fontWeight: "var(--font-weight-bold)", color: T.textGold, margin: "12px 0 8px", letterSpacing: "0.08em", textShadow: `0 0 16px ${T.goldGlow}` }}>{step.title}</h3>
@@ -1119,14 +1141,8 @@ export function CardGame() {
                   ))}
                   <div style={{ marginTop: 10 }}><GoldDivider /></div>
                 </div>
-
-                {/* Footer buttons */}
                 <div style={{ padding: "10px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
-                  <motion.button
-                    whileHover={{ color: T.textGold }}
-                    onClick={skipTutorial}
-                    style={{ background: "none", border: "none", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 0" }}
-                  >
+                  <motion.button whileHover={{ color: T.textGold }} onClick={skipTutorial} style={{ background: "none", border: "none", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 0" }}>
                     {"\u25C6"} Pular Guia
                   </motion.button>
                   <motion.button
@@ -1138,6 +1154,56 @@ export function CardGame() {
                     {isLast ? "Vamos lá! ⚔️" : "Próximo →"}
                   </motion.button>
                 </div>
+              </motion.div>
+            </motion.div>
+          );
+
+          /* ── ACTION step: slim non-blocking hint banner ── */
+          const atTop = step.align === "top";
+          return (
+            <motion.div
+              key={`tutorial-action-${tutorialStep}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed", inset: 0, zIndex: 400,
+                pointerEvents: "none",
+                display: "flex", flexDirection: "column",
+                alignItems: "center",
+                justifyContent: atTop ? "flex-start" : "flex-end",
+                padding: atTop ? "70px 16px 0" : "0 16px 110px",
+              }}
+            >
+              <motion.div
+                key={tutorialStep}
+                initial={{ opacity: 0, y: atTop ? -20 : 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: atTop ? -16 : 16 }}
+                transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                style={{
+                  pointerEvents: "all",
+                  width: "100%", maxWidth: 520,
+                  background: `${T.panel}f2`,
+                  border: `1.5px solid ${T.gold}`,
+                  boxShadow: `0 0 0 2px ${T.black}, 0 0 30px ${T.goldGlow}, 0 8px 40px rgba(0,0,0,0.8)`,
+                  padding: "10px 16px 10px 18px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", fontWeight: "var(--font-weight-bold)", color: T.textGold, letterSpacing: "0.08em", whiteSpace: "nowrap" }}>{step.title}</span>
+                  {step.actionHint && (
+                    <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textSilver, letterSpacing: "0.04em" }}>— {step.actionHint}</span>
+                  )}
+                </div>
+                <motion.button
+                  whileHover={{ color: T.textGold }}
+                  onClick={skipTutorial}
+                  style={{ background: "none", border: "none", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 0", flexShrink: 0 }}
+                >
+                  {"\u25C6"} Pular Guia
+                </motion.button>
               </motion.div>
             </motion.div>
           );
@@ -1236,7 +1302,7 @@ export function CardGame() {
 
         {/* HAND + DECK */}
         <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderTop: "none", padding: isMobile ? "12px 16px 12px" : "20px 24px 16px", display: "flex", alignItems: "flex-end", gap: isMobile ? 12 : 24, flexDirection: isMobile ? "column" : "row", position: "relative", zIndex: isDraggingCard ? 200 : "auto", overflow: isDraggingCard ? "visible" : "hidden" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1, width: "100%" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1, width: "100%", transition: "box-shadow 0.4s", boxShadow: tutorialStep === 2 ? `0 0 0 2px ${T.gold}, 0 0 24px ${T.goldGlow}` : undefined }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <CrosshairIcon size={14} color={T.gold} />
               <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>MÃO ({hand.length}/5)</span>
@@ -1265,7 +1331,7 @@ export function CardGame() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderLeft: isMobile ? "none" : `1px solid ${T.goldDark}50`, borderTop: isMobile ? `1px solid ${T.goldDark}50` : "none", paddingLeft: isMobile ? 0 : 20, paddingTop: isMobile ? 8 : 0, flexShrink: 0, width: isMobile ? "100%" : "auto" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, borderLeft: isMobile ? "none" : `1px solid ${T.goldDark}50`, borderTop: isMobile ? `1px solid ${T.goldDark}50` : "none", paddingLeft: isMobile ? 0 : 20, paddingTop: isMobile ? 8 : 0, flexShrink: 0, width: isMobile ? "100%" : "auto", transition: "box-shadow 0.4s", boxShadow: tutorialStep === 5 ? `0 0 0 2px ${T.gold}, 0 0 24px ${T.goldGlow}` : undefined }}>
             <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>BARALHO</span>
             <DeckStack count={deck.length} onDraw={drawCard} canDraw={isPlayerTurn && deck.length > 0 && hand.length < 5} isMobile={isMobile} />
             <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, textAlign: "center" }}>
