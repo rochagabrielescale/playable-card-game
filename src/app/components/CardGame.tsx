@@ -34,59 +34,59 @@ interface EnemyAction { card: CardDef; power: PowerDef; dmg: number; heal: numbe
 // ─── Card Definitions ─────────────────────────────────────────────────────────
 const CARD_DEFS: CardDef[] = [
   {
-    id: "jackmalvadeza", name: "JACKMALVADEZA", subtitle: "The Ancient Bohemian",
+    id: "jackmalvadeza", name: "JACKMALVADEZA", subtitle: "O Antigo Boêmio",
     image: jackImg, cost: 8, power: 8,
     powers: [
-      { name: "TADALA NA VEIA", desc: "Recover 20HP & infinite stamina for 2 turns", effect: { heal: 20, damage: 8 } },
-      { name: "ASSIM???", desc: "Everyone feels numb \u2014 30HP psychic shockwave", effect: { damage: 30 } },
+      { name: "TADALA NA VEIA", desc: "Recupera 20HP e stamina infinita por 2 turnos", effect: { heal: 20, damage: 8 } },
+      { name: "ASSIM???", desc: "Todo mundo trava \u2014 onda de choque psíquica de 30HP", effect: { damage: 30 } },
     ], color: "#e5a020",
   },
   {
-    id: "arkanjonit", name: "ARKANJONIT", subtitle: "Orto Master Churrasqueiro",
+    id: "arkanjonit", name: "ARKANJONIT", subtitle: "Mestre Churrasqueiro do Orto",
     image: arkanImg, cost: 9, power: 7,
     powers: [
-      { name: "BBQ BLAST", desc: "Fire up the grill \u2014 recover 50HP", effect: { heal: 50 } },
-      { name: "NA TERRA OU NO AR", desc: "80HP vulture divebomb attack!", effect: { damage: 80 } },
+      { name: "BBQ BLAST", desc: "Acende a grelha \u2014 recupera 50HP", effect: { heal: 50 } },
+      { name: "NA TERRA OU NO AR", desc: "Ataque mergulho de urubu \u2014 80HP de dano!", effect: { damage: 80 } },
     ], color: "#c0392b",
   },
   {
-    id: "dsincanada", name: "DSINCANADA", subtitle: "The Savanah Lighter",
+    id: "dsincanada", name: "DSINCANADA", subtitle: "O Acendedor da Savana",
     image: dsinImg, cost: 7, power: 9,
     powers: [
-      { name: "BRISA DELIRANTE", desc: "420HP smoke damage! Costs 69HP self-damage", effect: { damage: 420, selfDamage: 69 } },
-      { name: "RUGIDO DE FOTONS", desc: "Light up the area \u2014 120HP photon blast", effect: { damage: 120 } },
+      { name: "BRISA DELIRANTE", desc: "420HP de dano com fumaça! Custa 69HP de auto-dano", effect: { damage: 420, selfDamage: 69 } },
+      { name: "RUGIDO DE FOTONS", desc: "Ilumina a área \u2014 explosão de fótons de 120HP", effect: { damage: 120 } },
     ], color: "#8e44ad",
   },
   {
-    id: "fontana", name: "FONTANA", subtitle: "The Immortal Dentist",
+    id: "fontana", name: "FONTANA", subtitle: "O Dentista Imortal",
     image: fontanaImg, cost: 6, power: 10,
     powers: [
-      { name: "ANESTESIA ETILICA", desc: "Invulnerable serum \u2014 recover 30HP, 5HP self-damage", effect: { heal: 30, selfDamage: 5 } },
-      { name: "RABO DE BALA", desc: "Dental artillery \u2014 enemy loses 50HP", effect: { damage: 50 } },
+      { name: "ANESTESIA ETILICA", desc: "Soro invulnerável \u2014 recupera 30HP, 5HP de auto-dano", effect: { heal: 30, selfDamage: 5 } },
+      { name: "RABO DE BALA", desc: "Artilharia dentária \u2014 inimigo perde 50HP", effect: { damage: 50 } },
     ], color: "#b8860b",
   },
   {
-    id: "gr81", name: "GR81", subtitle: "The Maker of the North",
+    id: "gr81", name: "GR81", subtitle: "O Criador do Norte",
     image: gr81Img, cost: 10, power: 6,
     powers: [
-      { name: "CORTE SECO", desc: "Reverses the last card played \u2014 35HP damage", effect: { damage: 35 } },
-      { name: "PRODUCAO EM SERIE", desc: "Multiplied effects \u2014 20HP damage + recover 15HP", effect: { damage: 20, heal: 15 } },
+      { name: "CORTE SECO", desc: "Reverte a última carta jogada \u2014 35HP de dano", effect: { damage: 35 } },
+      { name: "PRODUCAO EM SERIE", desc: "Efeitos multiplicados \u2014 20HP de dano + recupera 15HP", effect: { damage: 20, heal: 15 } },
     ], color: "#16a34a",
   },
   {
-    id: "mpteixeira", name: "MPTEIXEIRA", subtitle: "The Thunder Voice",
+    id: "mpteixeira", name: "MPTEIXEIRA", subtitle: "A Voz do Trovão",
     image: mpteixeiraImg, cost: 8, power: 8,
     powers: [
-      { name: "CHAPA QUENTE", desc: "Conjures an X-RAY from space \u2014 40HP damage", effect: { damage: 40 } },
-      { name: "SUSSURO SLOW-MO", desc: "Sonic shockwave \u2014 25HP damage, 15HP self-damage", effect: { damage: 25, selfDamage: 15 } },
+      { name: "CHAPA QUENTE", desc: "Conjura um RAIO-X do espaço \u2014 40HP de dano", effect: { damage: 40 } },
+      { name: "SUSSURO SLOW-MO", desc: "Onda de choque sônica \u2014 25HP de dano, 15HP auto-dano", effect: { damage: 25, selfDamage: 15 } },
     ], color: "#dc2626",
   },
   {
-    id: "dinscout", name: "DINSCOUT", subtitle: "The Trophy Hunter",
+    id: "dinscout", name: "DINSCOUT", subtitle: "O Caçador de Troféus",
     image: dinscoutImg, cost: 7, power: 9,
     powers: [
-      { name: "CLT DA PSN", desc: "Trade cards for progress \u2014 60HP damage, 50HP self-damage", effect: { damage: 60, selfDamage: 50 } },
-      { name: "PLATINA OU NADA", desc: "Achievement unlocked \u2014 recover 40HP", effect: { heal: 40 } },
+      { name: "CLT DA PSN", desc: "Troca cartas por progresso \u2014 60HP de dano, 50HP auto-dano", effect: { damage: 60, selfDamage: 50 } },
+      { name: "PLATINA OU NADA", desc: "Conquista desbloqueada \u2014 recupera 40HP", effect: { heal: 40 } },
     ], color: "#b45309",
   },
 ];
