@@ -116,7 +116,7 @@ const TUTORIAL_STEPS: TutorialStepDef[] = [
     title: "🃏 Jogue uma Carta!",
     body: "",
     align: "bottom", mode: "action",
-    actionHint: "ARRASTE uma carta para o SEU CAMPO ↑   (no celular: TOQUE na carta)",
+    actionHint: "ARRASTE uma carta até o SEU CAMPO ↑   (ou TOQUE nela para jogar direto)",
     highlight: "hand",
   },
   {
@@ -420,7 +420,7 @@ function DraggableCardView({
 
   return (
     <motion.div
-      drag={!disabled && !isMobile}
+      drag={!disabled}
       dragSnapToOrigin
       dragElastic={0.18}
       dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
@@ -433,7 +433,7 @@ function DraggableCardView({
       onPointerMove={handlePointerMove}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      style={{ x, y, rotate, scale, cursor: disabled ? "default" : (isMobile ? "pointer" : "grab"), width: cardWidth, height: cardHeight, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
+      style={{ x, y, rotate, scale, cursor: disabled ? "default" : "grab", width: cardWidth, height: cardHeight, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
       whileHover={!disabled ? { y: -14, scale: 1.06 } : {}}
       transition={{ type: "spring", stiffness: 300, damping: 22 }}
     >
