@@ -358,11 +358,12 @@ function HPBar({ hp, maxHp, label, variant = "gold" }: { hp: number; maxHp: numb
 
 // ─── Draggable Card View ──────────────────────────────────────────────────────
 function DraggableCardView({
-  card, onDragPlay, disabled, dropZoneRef, isMobile, onDragStateChange,
+  card, onDragPlay, disabled, dropZoneRef, isMobile, onDragStateChange, onPreview,
 }: {
   card: CardInstance; onDragPlay: (card: CardInstance) => void; disabled: boolean;
   dropZoneRef: React.RefObject<HTMLDivElement | null>; isMobile: boolean;
   onDragStateChange?: (dragging: boolean) => void;
+  onPreview?: (def: CardDef) => void;
 }) {
   const { def } = card;
   const x = useMotionValue(0);
@@ -370,6 +371,32 @@ function DraggableCardView({
   const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12]);
   const scale = useTransform(y, [0, -80, -200], [1, 1.08, 1.15]);
   const [dragging, setDragging] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  // Long press detection
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null);
+
+  function startLongPress(e: React.PointerEvent) {
+    didLongPress.current = false;
+    pointerDownPos.current = { x: e.clientX, y: e.clientY };
+    longPressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      onPreview?.(def);
+    }, 480);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!pointerDownPos.current) return;
+    const dx = e.clientX - pointerDownPos.current.x;
+    const dy = e.clientY - pointerDownPos.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 8) cancelLongPress();
+  }
 
   const cardWidth = isMobile ? 80 : 118;
   const cardHeight = isMobile ? 114 : 168;
@@ -377,26 +404,17 @@ function DraggableCardView({
   function handleDragEnd(_: any, info: { point: { x: number; y: number }; velocity: { x: number; y: number } }) {
     setDragging(false);
     if (disabled) return;
-    // Check proximity to drop zone
     const dz = dropZoneRef.current;
     if (!dz) return;
     const rect = dz.getBoundingClientRect();
     const dropCX = rect.left + rect.width / 2;
     const dropCY = rect.top + rect.height / 2;
-    const cardX = info.point.x;
-    const cardY = info.point.y;
-    const dist = Math.sqrt((cardX - dropCX) ** 2 + (cardY - dropCY) ** 2);
-    if (dist < 160) {
-      onDragPlay(card);
-    }
-  }
-
-  function handleTap() {
-    if (disabled || isMobile) return;
+    const dist = Math.sqrt((info.point.x - dropCX) ** 2 + (info.point.y - dropCY) ** 2);
+    if (dist < 160) onDragPlay(card);
   }
 
   function handleMobileClick() {
-    if (disabled || !isMobile) return;
+    if (disabled || !isMobile || didLongPress.current) return;
     onDragPlay(card);
   }
 
@@ -406,9 +424,15 @@ function DraggableCardView({
       dragSnapToOrigin
       dragElastic={0.18}
       dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
-      onDragStart={() => { setDragging(true); onDragStateChange?.(true); }}
+      onDragStart={() => { setDragging(true); onDragStateChange?.(true); cancelLongPress(); }}
       onDragEnd={(...args) => { onDragStateChange?.(false); handleDragEnd(...args); }}
       onClick={handleMobileClick}
+      onPointerDown={startLongPress}
+      onPointerUp={cancelLongPress}
+      onPointerLeave={() => { cancelLongPress(); setHovered(false); }}
+      onPointerMove={handlePointerMove}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
       style={{ x, y, rotate, scale, cursor: disabled ? "default" : (isMobile ? "pointer" : "grab"), width: cardWidth, height: cardHeight, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
       whileHover={!disabled ? { y: -14, scale: 1.06 } : {}}
       transition={{ type: "spring", stiffness: 300, damping: 22 }}
@@ -433,11 +457,145 @@ function DraggableCardView({
           <div style={{ background: "rgba(0,0,0,0.85)", padding: "1px 6px", border: `1px solid ${T.gold}80`, color: T.textGold, fontSize: 10, fontFamily: "'Market Sans', sans-serif", fontWeight: "var(--font-weight-bold)" }}>{"\u2694"} {def.power}</div>
           <div style={{ background: "rgba(0,0,0,0.85)", padding: "1px 6px", border: `1px solid ${T.silver}60`, color: T.silver, fontSize: 10, fontFamily: "'Market Sans', sans-serif", fontWeight: "var(--font-weight-bold)" }}>{"\u2726"} {def.cost}</div>
         </div>
-        {/* Card name overlay on hover */}
+        {/* Card name overlay */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, background: "linear-gradient(rgba(0,0,0,0.85), transparent)", padding: "3px 5px 12px", pointerEvents: "none" }}>
           <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 8, color: T.textGold, letterSpacing: "0.08em", fontWeight: "var(--font-weight-bold)" }}>{def.name}</span>
         </div>
+        {/* Zoom icon — appears on hover (desktop) or always faintly visible (mobile) */}
+        <motion.button
+          initial={false}
+          animate={{ opacity: isMobile ? 0.45 : (hovered ? 1 : 0) }}
+          transition={{ duration: 0.18 }}
+          onClick={(e) => { e.stopPropagation(); cancelLongPress(); onPreview?.(def); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          title="Ver detalhes"
+          style={{
+            position: "absolute", bottom: 24, right: 4,
+            width: 18, height: 18,
+            background: "rgba(0,0,0,0.75)",
+            border: `1px solid ${T.gold}80`,
+            borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", padding: 0,
+            color: T.textGold, fontSize: 9,
+            fontFamily: "'Market Sans', sans-serif",
+            pointerEvents: "all",
+            boxShadow: `0 0 6px ${T.goldGlow}`,
+            zIndex: 5,
+          }}
+        >
+          ⊕
+        </motion.button>
       </div>
+    </motion.div>
+  );
+}
+
+// ─── Card Preview Modal ───────────────────────────────────────────────────────
+function CardPreviewModal({ def, onClose }: { def: CardDef; onClose: () => void }) {
+  return (
+    <motion.div
+      key="card-preview-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 500,
+        background: "rgba(0,0,0,0.92)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.72, opacity: 0, y: 40 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.82, opacity: 0, y: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 360,
+          background: T.panel,
+          border: `1.5px solid ${T.gold}`,
+          boxShadow: `0 0 0 3px ${T.black}, 0 0 0 5px ${T.goldDark}50, 0 0 80px ${def.color}30, 0 0 60px ${T.goldGlow}, 0 32px 100px rgba(0,0,0,0.95)`,
+          position: "relative", overflow: "hidden",
+          maxHeight: "90vh", display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Corner ornaments */}
+        <div style={{ position: "absolute", top: -1, left: -1, zIndex: 4 }}><CornerOrnament rotate={0}/></div>
+        <div style={{ position: "absolute", top: -1, right: -1, zIndex: 4 }}><CornerOrnament rotate={90}/></div>
+        <div style={{ position: "absolute", bottom: -1, right: -1, zIndex: 4 }}><CornerOrnament rotate={180}/></div>
+        <div style={{ position: "absolute", bottom: -1, left: -1, zIndex: 4 }}><CornerOrnament rotate={270}/></div>
+        {/* Background diamond pattern */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: `repeating-linear-gradient(45deg, ${T.gold}05 0px, ${T.gold}05 1px, transparent 1px, transparent 24px), repeating-linear-gradient(-45deg, ${T.gold}05 0px, ${T.gold}05 1px, transparent 1px, transparent 24px)`, zIndex: 0 }} />
+
+        {/* Card illustration — top section */}
+        <div style={{ position: "relative", width: "100%", height: 220, flexShrink: 0, overflow: "hidden", zIndex: 1 }}>
+          <img src={def.image} alt={def.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} draggable={false} />
+          {/* Gradient at bottom of image */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%", background: "linear-gradient(transparent, rgba(0,0,0,0.97))", pointerEvents: "none" }} />
+          {/* Color accent strip at top */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${def.color}, transparent)` }} />
+          {/* Name / subtitle over image */}
+          <div style={{ position: "absolute", bottom: 10, left: 14, right: 50, zIndex: 2 }}>
+            <p style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h3)", fontWeight: "var(--font-weight-bold)", color: T.textGold, letterSpacing: "0.1em", textShadow: `0 0 16px ${T.goldGlow}` }}>{def.name}</p>
+            <p style={{ margin: "2px 0 0", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, letterSpacing: "0.06em" }}>{def.subtitle}</p>
+          </div>
+          {/* Stats — top right */}
+          <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6, zIndex: 2 }}>
+            <div style={{ background: "rgba(0,0,0,0.85)", border: `1px solid ${T.gold}80`, padding: "3px 10px", backdropFilter: "blur(4px)" }}>
+              <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 11, color: T.textGold, fontWeight: "var(--font-weight-bold)", letterSpacing: "0.06em" }}>⚔ {def.power}</span>
+            </div>
+            <div style={{ background: "rgba(0,0,0,0.85)", border: `1px solid ${T.silver}60`, padding: "3px 10px", backdropFilter: "blur(4px)" }}>
+              <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 11, color: T.silver, fontWeight: "var(--font-weight-bold)", letterSpacing: "0.06em" }}>✶ {def.cost}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Powers section — scrollable */}
+        <div style={{ padding: "12px 16px 18px", overflowY: "auto", flex: 1, position: "relative", zIndex: 1 }}>
+          <GoldDivider />
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {def.powers.map((pw, i) => {
+              const tags: string[] = [];
+              if (pw.effect.damage) tags.push(`${pw.effect.damage} DANO`);
+              if (pw.effect.heal) tags.push(`+${pw.effect.heal} HP`);
+              if (pw.effect.selfDamage) tags.push(`-${pw.effect.selfDamage} AUTO`);
+              return (
+                <div key={i} style={{ padding: "10px 12px", background: T.panelInner, border: `1px solid ${T.goldDark}60`, position: "relative", overflow: "hidden" }}>
+                  {/* Left accent bar */}
+                  <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 3, background: def.color }} />
+                  <div style={{ paddingLeft: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", fontWeight: "var(--font-weight-bold)", color: T.textGold, letterSpacing: "0.08em" }}>
+                        {i === 0 ? "I" : "II"}  {pw.name}
+                      </span>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        {tags.map((tag) => (
+                          <span key={tag} style={{ fontFamily: "'Market Sans', sans-serif", fontSize: 10, fontWeight: "var(--font-weight-bold)", color: tag.includes("AUTO") ? "#ef4444" : tag.includes("+") ? "#4ade80" : T.textGold, background: tag.includes("AUTO") ? "#ef444418" : tag.includes("+") ? "#4ade8018" : `${T.gold}18`, border: `1px solid ${tag.includes("AUTO") ? "#ef444440" : tag.includes("+") ? "#4ade8040" : T.goldDark}`, padding: "1px 7px", letterSpacing: "0.05em" }}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textSilver, lineHeight: 1.5 }}>{pw.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 14 }}><GoldDivider /></div>
+          <div style={{ marginTop: 12, textAlign: "center" }}>
+            <motion.button
+              whileHover={{ scale: 1.04, boxShadow: `0 0 20px ${T.goldGlow}` }}
+              whileTap={{ scale: 0.96 }}
+              onClick={onClose}
+              style={{ background: "transparent", border: `1.5px solid ${T.gold}`, borderRadius: 0, padding: "8px 36px", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", fontWeight: "var(--font-weight-bold)", color: T.textGold, cursor: "pointer", letterSpacing: "0.1em", boxShadow: `inset 0 1px 0 ${T.gold}30, 0 0 12px ${T.goldGlow}` }}
+            >
+              {"\u25C6"} Fechar {"\u25C6"}
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -634,6 +792,7 @@ export function CardGame() {
   const [enemyAction, setEnemyAction] = useState<EnemyAction | null>(null);
   const [isDragHover, setIsDragHover] = useState(false);
   const [isDraggingCard, setIsDraggingCard] = useState(false);
+  const [previewCard, setPreviewCard] = useState<CardDef | null>(null);
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const addLog = useCallback((msg: string) => setLogs((l) => [...l, msg]), []);
@@ -1082,6 +1241,11 @@ export function CardGame() {
         )}
       </AnimatePresence>
 
+      {/* ══════════════ CARD PREVIEW MODAL ══════════════ */}
+      <AnimatePresence>
+        {previewCard && <CardPreviewModal def={previewCard} onClose={() => setPreviewCard(null)} />}
+      </AnimatePresence>
+
       {/* ══════════════ TUTORIAL OVERLAY ══════════════ */}
       {/* Step 3 is rendered as a banner inside the power picker — no separate overlay needed */}
       <AnimatePresence>
@@ -1319,6 +1483,7 @@ export function CardGame() {
                     dropZoneRef={dropZoneRef}
                     isMobile={isMobile}
                     onDragStateChange={setIsDraggingCard}
+                    onPreview={setPreviewCard}
                   />
                 ))}
               </AnimatePresence>
