@@ -304,10 +304,11 @@ function HPBar({ hp, maxHp, label, variant = "gold" }: { hp: number; maxHp: numb
 
 // ─── Draggable Card View ──────────────────────────────────────────────────────
 function DraggableCardView({
-  card, onDragPlay, disabled, dropZoneRef, isMobile,
+  card, onDragPlay, disabled, dropZoneRef, isMobile, onDragStateChange,
 }: {
   card: CardInstance; onDragPlay: (card: CardInstance) => void; disabled: boolean;
   dropZoneRef: React.RefObject<HTMLDivElement | null>; isMobile: boolean;
+  onDragStateChange?: (dragging: boolean) => void;
 }) {
   const { def } = card;
   const x = useMotionValue(0);
@@ -351,8 +352,8 @@ function DraggableCardView({
       dragSnapToOrigin
       dragElastic={0.18}
       dragTransition={{ bounceStiffness: 300, bounceDamping: 20 }}
-      onDragStart={() => setDragging(true)}
-      onDragEnd={handleDragEnd}
+      onDragStart={() => { setDragging(true); onDragStateChange?.(true); }}
+      onDragEnd={(...args) => { onDragStateChange?.(false); handleDragEnd(...args); }}
       onClick={handleMobileClick}
       style={{ x, y, rotate, scale, cursor: disabled ? "default" : (isMobile ? "pointer" : "grab"), width: cardWidth, height: cardHeight, flexShrink: 0, position: "relative", overflow: "visible", zIndex: dragging ? 100 : 1, touchAction: "none" }}
       whileHover={!disabled ? { y: -14, scale: 1.06 } : {}}
@@ -571,6 +572,7 @@ export function CardGame() {
   const [choosingPowerCard, setChoosingPowerCard] = useState<CardInstance | null>(null);
   const [enemyAction, setEnemyAction] = useState<EnemyAction | null>(null);
   const [isDragHover, setIsDragHover] = useState(false);
+  const [isDraggingCard, setIsDraggingCard] = useState(false);
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const addLog = useCallback((msg: string) => setLogs((l) => [...l, msg]), []);
@@ -1098,14 +1100,14 @@ export function CardGame() {
         <div style={{ borderTop: "none" }}><LogPanel logs={logs} /></div>
 
         {/* HAND + DECK */}
-        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderTop: "none", padding: isMobile ? "12px 16px 12px" : "20px 24px 16px", display: "flex", alignItems: "flex-end", gap: isMobile ? 12 : 24, flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ background: T.panelInner, border: `1.5px solid ${T.gold}`, borderTop: "none", padding: isMobile ? "12px 16px 12px" : "20px 24px 16px", display: "flex", alignItems: "flex-end", gap: isMobile ? 12 : 24, flexDirection: isMobile ? "column" : "row", position: "relative", zIndex: isDraggingCard ? 200 : "auto", overflow: isDraggingCard ? "visible" : "hidden" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6, flex: 1, width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <CrosshairIcon size={14} color={T.gold} />
               <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textGold, letterSpacing: "0.1em", fontWeight: "var(--font-weight-bold)" }}>HAND ({hand.length}/5)</span>
               <CrosshairIcon size={14} color={T.gold} />
             </div>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: isMobile ? 6 : 8, width: "100%", minHeight: isMobile ? 130 : 190, paddingBottom: 4, overflowX: isMobile ? "auto" : "visible", overflowY: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: isMobile ? 6 : 8, width: "100%", minHeight: isMobile ? 130 : 190, paddingBottom: 4, overflowX: isDraggingCard ? "visible" : (isMobile ? "auto" : "visible"), overflowY: isDraggingCard ? "visible" : "hidden" }}>
               <AnimatePresence>
                 {hand.map((card) => (
                   <DraggableCardView
@@ -1115,6 +1117,7 @@ export function CardGame() {
                     disabled={!isPlayerTurn || !!choosingPowerCard}
                     dropZoneRef={dropZoneRef}
                     isMobile={isMobile}
+                    onDragStateChange={setIsDraggingCard}
                   />
                 ))}
               </AnimatePresence>
