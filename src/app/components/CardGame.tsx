@@ -91,6 +91,45 @@ const CARD_DEFS: CardDef[] = [
   },
 ];
 
+// ─── Tutorial steps ───────────────────────────────────────────────────────────
+const TUTORIAL_STEPS: { title: string; body: string; align: "center" | "bottom" }[] = [
+  {
+    title: "Bem-vindo ao SVP TCG! 🎴",
+    body: "Você enfrenta o Dark Overlord. Reduza o HP dele a zero para vencer!\nEle começa com 500HP — você tem 300HP. Use suas cartas com sabedoria!",
+    align: "center",
+  },
+  {
+    title: "Barras de HP ❤️",
+    body: "Na parte de cima fica o HP do Dark Overlord (roxo). Na parte de baixo fica o seu HP (dourado). Quando um dos dois chegar a zero, a batalha termina.",
+    align: "center",
+  },
+  {
+    title: "Sua Mão 🃏",
+    body: "As cartas na sua MÃO aparecem aqui embaixo. Você começa com 3 cartas. Cada carta tem um nome, Poder (POD) e Custo.",
+    align: "bottom",
+  },
+  {
+    title: "Como Jogar uma Carta ▶️",
+    body: "ARRASTE uma carta até o SEU CAMPO no centro do tabuleiro para jogá-la.\nNo celular, TOQUE na carta diretamente.",
+    align: "center",
+  },
+  {
+    title: "Escolha seu Poder ⚡",
+    body: "Após jogar uma carta, um menu aparece para você escolher entre 2 PODERES. Cada poder tem efeitos diferentes: dano, cura ou auto-dano. Leia com atenção antes de escolher!",
+    align: "center",
+  },
+  {
+    title: "Compre Cartas 🎲",
+    body: "Clique no BARALHO (à direita) para comprar uma nova carta. Você pode ter no máximo 5 cartas na mão. Só é possível comprar na sua vez.",
+    align: "bottom",
+  },
+  {
+    title: "Pronto para Batalhar! ⚔️",
+    body: "Após cada jogada sua, o Dark Overlord responde automaticamente. Acompanhe o LOG de batalha para ver o que aconteceu em cada turno. Boa sorte, Comandante!",
+    align: "center",
+  },
+];
+
 // ─── Deck helpers ─────────────────────────────────────────────────────────────
 let uidCounter = 0;
 function newUid() { return `card-${++uidCounter}`; }
@@ -554,9 +593,16 @@ export function CardGame() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  // ── Tutorial state ──
+  const [tutorialStep, setTutorialStep] = useState<number | null>(null);
+  function skipTutorial() { setTutorialStep(null); }
+  function nextTutorial() {
+    setTutorialStep((s) => (s === null || s >= TUTORIAL_STEPS.length - 1) ? null : s + 1);
+  }
+
   function handleStartGame() {
     setIntroStage("fadeout");
-    setTimeout(() => setIntroStage("done"), 800);
+    setTimeout(() => { setIntroStage("done"); setTutorialStep(0); }, 800);
   }
 
   const [deck, setDeck] = useState<CardInstance[]>([]);
@@ -691,7 +737,7 @@ export function CardGame() {
     setHand(d.splice(0, 3)); setDeck(d);
     setPlayerPlayed(null); setEnemyPlayed(null);
     setPlayerHP(MAX_PLAYER_HP); setEnemyHP(MAX_ENEMY_HP);
-    setPhase("player-turn"); setLogs([]); setChoosingPowerCard(null); setEnemyAction(null);
+    setPhase("player-turn"); setLogs([]); setChoosingPowerCard(null); setEnemyAction(null); setTutorialStep(null);
   }
 
   const isPlayerTurn = phase === "player-turn";
@@ -1007,6 +1053,95 @@ export function CardGame() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ══════════════ TUTORIAL OVERLAY ══════════════ */}
+      <AnimatePresence>
+        {tutorialStep !== null && introStage === "done" && (() => {
+          const step = TUTORIAL_STEPS[tutorialStep];
+          const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+          return (
+            <motion.div
+              key="tutorial-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed", inset: 0, zIndex: 400,
+                background: "rgba(0,0,0,0.72)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: step.align === "bottom" ? "flex-end" : "center",
+                padding: step.align === "bottom" ? "0 16px 200px" : "16px",
+                pointerEvents: "none",
+              }}
+            >
+              <motion.div
+                key={tutorialStep}
+                initial={{ opacity: 0, y: 24, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -16, scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                style={{
+                  pointerEvents: "all",
+                  width: "100%", maxWidth: 480,
+                  background: T.panel,
+                  border: `1.5px solid ${T.gold}`,
+                  boxShadow: `0 0 0 3px ${T.black}, 0 0 0 5px ${T.goldDark}50, 0 0 60px ${T.goldGlow}, 0 24px 80px rgba(0,0,0,0.9)`,
+                  position: "relative", overflow: "hidden",
+                }}
+              >
+                {/* Corner ornaments */}
+                <div style={{ position: "absolute", top: -1, left: -1, zIndex: 2 }}><CornerOrnament rotate={0}/></div>
+                <div style={{ position: "absolute", top: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={90}/></div>
+                <div style={{ position: "absolute", bottom: -1, right: -1, zIndex: 2 }}><CornerOrnament rotate={180}/></div>
+                <div style={{ position: "absolute", bottom: -1, left: -1, zIndex: 2 }}><CornerOrnament rotate={270}/></div>
+                {/* Diamond pattern bg */}
+                <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: `repeating-linear-gradient(45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 24px), repeating-linear-gradient(-45deg, ${T.gold}06 0px, ${T.gold}06 1px, transparent 1px, transparent 24px)` }} />
+
+                {/* Header */}
+                <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${T.goldDark}50`, position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <CrosshairIcon size={12} color={T.gold} />
+                    <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", fontWeight: "var(--font-weight-bold)", color: T.textGold, letterSpacing: "0.12em" }}>GUIA DO JOGO</span>
+                    <CrosshairIcon size={12} color={T.gold} />
+                  </div>
+                  <span style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, letterSpacing: "0.06em" }}>{tutorialStep + 1} / {TUTORIAL_STEPS.length}</span>
+                </div>
+
+                {/* Body */}
+                <div style={{ padding: "16px 20px 12px", position: "relative", zIndex: 1 }}>
+                  <GoldDivider />
+                  <h3 style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-h3)", fontWeight: "var(--font-weight-bold)", color: T.textGold, margin: "12px 0 8px", letterSpacing: "0.08em", textShadow: `0 0 16px ${T.goldGlow}` }}>{step.title}</h3>
+                  {step.body.split("\n").map((line, i) => (
+                    <p key={i} style={{ fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-p)", color: T.textSilver, margin: "0 0 6px", lineHeight: 1.55 }}>{line}</p>
+                  ))}
+                  <div style={{ marginTop: 10 }}><GoldDivider /></div>
+                </div>
+
+                {/* Footer buttons */}
+                <div style={{ padding: "10px 20px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", zIndex: 1 }}>
+                  <motion.button
+                    whileHover={{ color: T.textGold }}
+                    onClick={skipTutorial}
+                    style={{ background: "none", border: "none", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", color: T.textDim, cursor: "pointer", letterSpacing: "0.08em", padding: "4px 0" }}
+                  >
+                    {"\u25C6"} Pular Guia
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05, boxShadow: `0 0 20px ${T.goldGlow}` }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={isLast ? skipTutorial : nextTutorial}
+                    style={{ background: "transparent", border: `1.5px solid ${T.gold}`, borderRadius: 0, padding: "8px 28px", fontFamily: "'Market Sans', sans-serif", fontSize: "var(--text-label)", fontWeight: "var(--font-weight-bold)", color: T.textGold, cursor: "pointer", letterSpacing: "0.1em", boxShadow: `inset 0 1px 0 ${T.gold}30, 0 0 12px ${T.goldGlow}` }}
+                  >
+                    {isLast ? "Vamos lá! ⚔️" : "Próximo →"}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ══════════════ MAIN BOARD ══════════════ */}
