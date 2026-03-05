@@ -140,7 +140,7 @@ const TUTORIAL_STEPS: TutorialStepDef[] = [
   },
   {
     title: "Pronto para Batalhar! ⚔️",
-    body: "Você aprendeu o básico! Continue jogando e descubra os poderes de cada carta.\nAcompanhe o LOG de batalha para ver o que aconteceu em cada turno. Boa sorte, Comandante!",
+    body: "Você aprendeu o básico! Acompanhe o LOG de batalha para ver o que aconteceu em cada turno.\n🔍 Dica: segure qualquer carta na mão para ver a ilustração e os poderes em detalhes. No desktop, passe o mouse e clique no ⊕.\nBoa sorte, Comandante!",
     align: "center", mode: "info",
   },
 ];
@@ -503,7 +503,8 @@ function CardPreviewModal({ def, onClose }: { def: CardDef; onClose: () => void 
       style={{
         position: "fixed", inset: 0, zIndex: 500,
         background: "rgba(0,0,0,0.92)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        overflowY: "auto",
         padding: "20px",
       }}
     >
@@ -515,11 +516,12 @@ function CardPreviewModal({ def, onClose }: { def: CardDef; onClose: () => void 
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 360,
+          margin: "auto",
           background: T.panel,
           border: `1.5px solid ${T.gold}`,
           boxShadow: `0 0 0 3px ${T.black}, 0 0 0 5px ${T.goldDark}50, 0 0 80px ${def.color}30, 0 0 60px ${T.goldGlow}, 0 32px 100px rgba(0,0,0,0.95)`,
           position: "relative", overflow: "hidden",
-          maxHeight: "90vh", display: "flex", flexDirection: "column",
+          display: "flex", flexDirection: "column",
         }}
       >
         {/* Corner ornaments */}
@@ -531,7 +533,7 @@ function CardPreviewModal({ def, onClose }: { def: CardDef; onClose: () => void 
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: `repeating-linear-gradient(45deg, ${T.gold}05 0px, ${T.gold}05 1px, transparent 1px, transparent 24px), repeating-linear-gradient(-45deg, ${T.gold}05 0px, ${T.gold}05 1px, transparent 1px, transparent 24px)`, zIndex: 0 }} />
 
         {/* Card illustration — top section */}
-        <div style={{ position: "relative", width: "100%", height: 220, flexShrink: 0, overflow: "hidden", zIndex: 1 }}>
+        <div style={{ position: "relative", width: "100%", height: "min(220px, 38vh)", flexShrink: 0, overflow: "hidden", zIndex: 1 }}>
           <img src={def.image} alt={def.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} draggable={false} />
           {/* Gradient at bottom of image */}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%", background: "linear-gradient(transparent, rgba(0,0,0,0.97))", pointerEvents: "none" }} />
